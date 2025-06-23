@@ -21,8 +21,6 @@ import {
   Tag,
   FileText,
   CreditCard,
-  Users,
-  Briefcase,
   Globe,
   Printer,
   Loader2,
@@ -60,29 +58,49 @@ export function CustomerDetailsDialog({ customer, open, onOpenChange }: Customer
   // Bestimme den Namen basierend auf dem Kundentyp
   let displayName = "";
   
-  // Prüfe auf Personendaten
-  if (customer.personFirstName || customer.personLastName) {
-    const firstName = customer.personFirstName || "";
-    const lastName = customer.personLastName || "";
-    displayName = `${firstName} ${lastName}`.trim();
+  // Für Unternehmen (isCompany: true) verwende personFirstName
+  if (customer.isCompany) {
+    // Prüfe, ob personFirstName vorhanden ist
+    if (customer.personFirstName && customer.personFirstName.trim() !== "") {
+      displayName = decodeHtmlEntities(customer.personFirstName).trim();
+    }
+    // Fallback auf companyName, wenn personFirstName nicht vorhanden ist
+    else if (customer.companyName && customer.companyName.trim() !== "") {
+      displayName = decodeHtmlEntities(customer.companyName).trim();
+    }
   } 
-  // Prüfe auf Firmennamen
-  else if (customer.companyName) {
-    displayName = decodeHtmlEntities(customer.companyName);
+  // Prüfe auf Personendaten für Personen
+  else if (customer.isPerson) {
+    const firstName = customer.personFirstName || customer.firstName || "";
+    const lastName = customer.personLastName || customer.lastName || "";
+    displayName = `${firstName} ${lastName}`.trim();
   }
-  // Prüfe auf Standortnamen
-  else if (customer.locationName) {
-    displayName = decodeHtmlEntities(customer.locationName);
-  }
-  // Wenn keine direkten Namen verfügbar sind, prüfe contactFor
-  else if (customer.contactFor && customer.contactFor.length > 0) {
-    const primaryCompany = customer.contactFor[0];
-    if (primaryCompany.companyName) {
-      displayName = decodeHtmlEntities(primaryCompany.companyName);
-    } else if (primaryCompany.personFirstName) {
-      displayName = decodeHtmlEntities(primaryCompany.personFirstName);
-    } else if (primaryCompany.locationName) {
-      displayName = decodeHtmlEntities(primaryCompany.locationName);
+  // Fallback für andere Fälle
+  else {
+    // Prüfe auf Personendaten
+    if (customer.personFirstName || customer.personLastName) {
+      const firstName = customer.personFirstName || "";
+      const lastName = customer.personLastName || "";
+      displayName = `${firstName} ${lastName}`.trim();
+    } 
+    // Prüfe auf Firmennamen
+    else if (customer.companyName && customer.companyName.trim() !== "") {
+      displayName = decodeHtmlEntities(customer.companyName).trim();
+    }
+    // Prüfe auf Standortnamen
+    else if (customer.locationName && customer.locationName.trim() !== "") {
+      displayName = decodeHtmlEntities(customer.locationName).trim();
+    }
+    // Wenn keine direkten Namen verfügbar sind, prüfe contactFor
+    else if (customer.contactFor && customer.contactFor.length > 0) {
+      const primaryCompany = customer.contactFor[0];
+      if (primaryCompany.companyName && primaryCompany.companyName.trim() !== "") {
+        displayName = decodeHtmlEntities(primaryCompany.companyName).trim();
+      } else if (primaryCompany.personFirstName && primaryCompany.personFirstName.trim() !== "") {
+        displayName = decodeHtmlEntities(primaryCompany.personFirstName).trim();
+      } else if (primaryCompany.locationName && primaryCompany.locationName.trim() !== "") {
+        displayName = decodeHtmlEntities(primaryCompany.locationName).trim();
+      }
     }
   }
   
@@ -204,6 +222,11 @@ export function CustomerDetailsDialog({ customer, open, onOpenChange }: Customer
                   <p>
                     <span className="font-medium">Name:</span> {displayNameWithSalutation}
                   </p>
+                  {isCompany && customer.companyName && customer.companyName.trim() !== "" && (
+                    <p>
+                      <span className="font-medium">Firmenname:</span> {decodeHtmlEntities(customer.companyName)}
+                    </p>
+                  )}
                   {customerId && (
                     <p>
                       <span className="font-medium">Kundennummer:</span> {customerId}
